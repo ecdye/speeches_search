@@ -1,7 +1,43 @@
 import requests
 from bs4 import BeautifulSoup
+from threading import Lock
+from concurrent.futures import ThreadPoolExecutor
+import logging
 
 from ..resources import Speaker, Speech
+from ..logging import get_logger
+
+
+logger = get_logger()
+
+
+def scrape_speakers() -> list[Speaker]:
+    url = "https://speeches.byu.edu/speakers/"
+    response = requests.get(url)
+
+    speaker_links: list[str] = []
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, 'html.parser')
+        speaker_elements = soup.find_all('h3', class_='archive-listing__item')
+        for element in speaker_elements:
+            if link_element := element.find('a', class_='archive-item__link'):
+                speaker_links.append(str(link_element['href']).rstrip('/').split('/')[-1])
+                logger.info(f"Found speaker link: {link_element['href']}")
+
+
+    speakers: list[Speaker] = []
+    lock = Lock()
+
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(scrape_speaker, link) for link in speaker_links]
+        for future in futures:
+            speaker = future.result()
+            if speaker:
+                with lock:
+                    speakers.append(speaker)
+
+    return speakers
 
 
 def scrape_speaker(speaker_name: str) -> Speaker | None:
@@ -47,10 +83,11 @@ def scrape_speaker(speaker_name: str) -> Speaker | None:
         )
 
         scrape_speaker_talks(speaker)
+        logger.info(f"Scraped speaker: {speaker['name']} with {len(speaker['talks'])} talks")
 
         return speaker
     else:
-        print(f"Failed to retrieve data for {speaker_name}")
+        logger.error(f"Failed to retrieve data for {speaker_name}")
         return None
 
 
@@ -65,4 +102,4 @@ def scrape_speaker_talks(speaker: Speaker) -> None:
                 paragraphs = content_element.find_all('p')
                 talk['content'] = [p.text.strip() for p in paragraphs]
         else:
-            print(f"Failed to retrieve content for talk: {talk['title']} at {talk_url}")
+            logger.error(f"Failed to retrieve content for talk: {talk['title']} at {talk_url}")

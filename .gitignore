@@ -178,6 +178,9 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+# NextPlaid data (indices + model cache)
+.data/
+
 # Cython debug symbols
 cython_debug/
 
@@ -214,3 +217,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local speeches dowloads
+speakers.json
