@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Semantic Search for BYU Speeches"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "bs4>=0.0.2",
+    "requests>=2.32.5",
+]
 
 [project.scripts]
 speeches-search = "speeches_search:main"
