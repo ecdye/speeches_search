@@ -209,7 +209,7 @@ dependencies = [
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "next-plaid-client", specifier = ">=1.1.1" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.2.0" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "requests", specifier = ">=2.32.5" },
 ]
 
