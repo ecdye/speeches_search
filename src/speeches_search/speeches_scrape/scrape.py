@@ -2,9 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
-import logging
 
 from ..resources import Speaker, Speech
+from ..database import get_existing_talk_titles
 from ..logging import get_logger
 
 
@@ -24,10 +24,8 @@ def scrape_speakers() -> list[Speaker]:
                 speaker_links.append(str(link_element['href']).rstrip('/').split('/')[-1])
                 logger.info(f"Found speaker link: {link_element['href']}")
 
-
     speakers: list[Speaker] = []
     lock = Lock()
-
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(scrape_speaker, link) for link in speaker_links]
@@ -82,7 +80,8 @@ def scrape_speaker(speaker_name: str) -> Speaker | None:
             talks=talks
         )
 
-        scrape_speaker_talks(speaker)
+        existing_titles = get_existing_talk_titles(name)
+        scrape_speaker_talks(speaker, existing_titles)
         logger.info(f"Scraped speaker: {speaker['name']} with {len(speaker['talks'])} talks")
 
         return speaker
@@ -91,8 +90,11 @@ def scrape_speaker(speaker_name: str) -> Speaker | None:
         return None
 
 
-def scrape_speaker_talks(speaker: Speaker) -> None:
+def scrape_speaker_talks(speaker: Speaker, existing_titles: set[str]) -> None:
     for talk in speaker['talks']:
+        if talk['title'] in existing_titles:
+            logger.info(f"Skipping already downloaded talk: {talk['title']}")
+            continue
         talk_url = talk['url']
         response = requests.get(talk_url)
         if response.status_code == 200:

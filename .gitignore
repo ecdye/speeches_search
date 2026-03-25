@@ -217,6 +217,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-
-# Local speeches dowloads
-speakers.json

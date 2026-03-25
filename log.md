@@ -2,4 +2,4 @@
 | :--- | :--------------------------------------------------------- | ----: |
 | 3/23 | Determined idea, initial implementation, partially working | 4     |
 | 3/24 | Fix creation of embeddings, embed forever lol, test query  | 5     |
-| 3/25 | Improve the CLI query abilities                            | TBD   |
+| 3/25 | Improve the CLI query abilities, migrate to postgres       | TBD   |

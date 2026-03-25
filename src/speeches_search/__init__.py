@@ -1,10 +1,10 @@
 from next_plaid_client import NextPlaidClient
-import json
 import argparse
 
 from .indexer import create_speeches_index, index_speaker
 from .searcher import search_by_speaker, search_speeches
 from .speeches_scrape.scrape import scrape_speakers
+from .database import create_tables, populate_speaker, get_speakers_for_indexing
 from .resources import Speaker
 from .logging import get_logger
 
@@ -13,12 +13,14 @@ logger = get_logger()
 
 
 def scrape_and_save_speeches():
+    create_tables()
     speakers = scrape_speakers()
     if not speakers:
         logger.error("Failed to scrape any speakers.")
         return
 
-    json.dump(speakers, open("speakers.json", "w"), indent=2)
+    for speaker in speakers:
+        populate_speaker(speaker)
 
 
 def main():
@@ -31,7 +33,7 @@ def main():
     if parsed_args.scrape:
         scrape_and_save_speeches()
     elif parsed_args.index:
-        speakers: list[Speaker] = json.load(open("speakers.json"))
+        speakers = get_speakers_for_indexing()
         with NextPlaidClient(NEXTPLAID_URL) as client:
             create_speeches_index(client)
             for speaker in speakers:
