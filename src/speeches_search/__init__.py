@@ -2,9 +2,9 @@ from next_plaid_client import NextPlaidClient
 import json
 import argparse
 
-from .indexer import create_speeches_index, delete_speaker, index_speaker
+from .indexer import create_speeches_index, index_speaker
 from .searcher import search_by_speaker, search_speeches
-from .speeches_scrape.scrape import scrape_speaker, scrape_speakers
+from .speeches_scrape.scrape import scrape_speakers
 from .resources import Speaker
 from .logging import get_logger
 
@@ -39,13 +39,25 @@ def main():
                 logger.info(f"Indexed {len(speaker['talks'])} talks for {speaker['name']}")
     elif parsed_args.search:
         with NextPlaidClient(NEXTPLAID_URL) as client:
-            query = input("Enter a search query: ")
-            results = search_speeches(client, query)
-            for qr in results.results:
-                print(f"\nSearch results for '{query}':")
-                for score, meta in zip(
-                     qr.scores, qr.metadata or []
-                ):
-                    print(f"  [{score:.4f}] {meta}")
+            while True:
+                query = input("Enter a search query (or 'quit' to exit): ")
+                if query.lower() == "quit":
+                    break
+                speaker = input("Filter by speaker name (leave blank for all): ").strip()
+                if speaker:
+                    results = search_by_speaker(client, query, speaker, top_k=5)
+                else:
+                    results = search_speeches(client, query, top_k=5)
+                for qr in results.results:
+                    print(f"\nSearch results for '{query}':")
+                    for score, meta in zip(
+                        qr.scores, qr.metadata or []
+                    ):
+                        assert meta is not None
+                        print(f"  Talk: {meta.get('speech_title', 'Unknown')}"
+                               f" by {meta.get('speaker_name', 'Unknown')},"
+                               f" Paragraph: {meta.get('paragraph_index', 'Unknown')} [{score:.4f}]")
+                        print(f"    URL: {meta.get('speech_url', 'Unknown')}\n")
+
     else:
         args.print_help()
