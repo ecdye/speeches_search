@@ -5,51 +5,387 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BYU Speeches Search</title>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
-        h1 { text-align: center; }
-        form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2rem; align-items: end; }
-        form > div { display: flex; flex-direction: column; }
-        label { font-size: 0.85rem; margin-bottom: 0.2rem; }
-        input[type="text"], select { padding: 0.4rem; font-size: 1rem; }
-        input[type="text"] { flex: 1; min-width: 200px; }
-        button { padding: 0.4rem 1rem; font-size: 1rem; cursor: pointer; }
-        .result { border: 1px solid #ccc; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; }
-        .result-title { font-weight: bold; }
-        .result-meta { color: #555; font-size: 0.9rem; }
-        .result-url { font-size: 0.85rem; }
-        .result-paragraphs { margin-top: 0.5rem; font-size: 0.9rem; color: #333; }
-        .result-paragraphs p { margin: 0.3rem 0; }
-        .ellipsis { text-align: center; color: #999; font-size: 1.2rem; letter-spacing: 0.2rem; }
-        .no-results { color: #888; text-align: center; margin-top: 2rem; }
+        :root {
+            --bg: #f5f6fa;
+            --surface: #ffffff;
+            --surface-hover: #f0f1f5;
+            --text: #1a1a2e;
+            --text-secondary: #555;
+            --border: #dde1e8;
+            --accent: #4361ee;
+            --accent-hover: #3a56d4;
+            --accent-light: #eef1ff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 4px 14px rgba(0,0,0,0.1);
+            --radius: 10px;
+            --radius-sm: 6px;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f0f1a;
+                --surface: #1a1a2e;
+                --surface-hover: #222240;
+                --text: #e2e2ef;
+                --text-secondary: #9a9ab0;
+                --border: #2a2a40;
+                --accent: #6c83f7;
+                --accent-hover: #5a71e0;
+                --accent-light: #1e1e38;
+                --shadow: 0 1px 3px rgba(0,0,0,0.3);
+                --shadow-lg: 0 4px 14px rgba(0,0,0,0.4);
+            }
+        }
+        html[data-theme="dark"] {
+            --bg: #0f0f1a;
+            --surface: #1a1a2e;
+            --surface-hover: #222240;
+            --text: #e2e2ef;
+            --text-secondary: #9a9ab0;
+            --border: #2a2a40;
+            --accent: #6c83f7;
+            --accent-hover: #5a71e0;
+            --accent-light: #1e1e38;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow-lg: 0 4px 14px rgba(0,0,0,0.4);
+        }
+        html[data-theme="light"] {
+            --bg: #f5f6fa;
+            --surface: #ffffff;
+            --surface-hover: #f0f1f5;
+            --text: #1a1a2e;
+            --text-secondary: #555;
+            --border: #dde1e8;
+            --accent: #4361ee;
+            --accent-hover: #3a56d4;
+            --accent-light: #eef1ff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 4px 14px rgba(0,0,0,0.1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2rem 1.25rem;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .theme-toggle {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            font-size: 1.15rem;
+            line-height: 1;
+            color: var(--text);
+            box-shadow: var(--shadow);
+            transition: background 0.2s;
+        }
+        .theme-toggle:hover { background: var(--surface-hover); }
+
+        /* Search card */
+        .search-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+        .search-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        .field { display: flex; flex-direction: column; }
+        .field label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+        }
+        .field-query { flex: 1; min-width: 220px; }
+        .field input[type="text"] {
+            padding: 0.55rem 0.75rem;
+            font-size: 0.95rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+        .field input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(67,97,238,0.15);
+        }
+
+        /* Multi-select speaker dropdown */
+        .speaker-select {
+            position: relative;
+            min-width: 200px;
+        }
+        .speaker-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.95rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text);
+            cursor: pointer;
+            user-select: none;
+            transition: border-color 0.2s;
+            min-height: 2.38rem;
+        }
+        .speaker-toggle:hover { border-color: var(--accent); }
+        .speaker-toggle .arrow { font-size: 0.6rem; opacity: 0.6; transition: transform 0.2s; }
+        .speaker-toggle.open .arrow { transform: rotate(180deg); }
+        .speaker-toggle .selected-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .speaker-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .speaker-dropdown.open { display: block; }
+        .speaker-dropdown .speaker-search {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+        }
+        .speaker-dropdown label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-transform: none;
+            letter-spacing: normal;
+            font-weight: 400;
+            color: var(--text);
+        }
+        .speaker-dropdown label:hover { background: var(--surface-hover); }
+        .speaker-dropdown label input[type="checkbox"] { accent-color: var(--accent); }
+
+        /* Chips for selected speakers */
+        .speaker-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.5rem;
+        }
+        .speaker-chips:empty { display: none; }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            border-radius: 99px;
+            border: 1px solid var(--accent);
+        }
+        .chip-remove {
+            cursor: pointer;
+            font-size: 0.9rem;
+            line-height: 1;
+            opacity: 0.7;
+        }
+        .chip-remove:hover { opacity: 1; }
+
+        /* Search button */
+        .btn-search {
+            padding: 0.55rem 1.4rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+        .btn-search:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 2px 8px rgba(67,97,238,0.3);
+        }
+
+        /* Results */
+        .results-heading {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .result {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.85rem;
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .result:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent);
+        }
+        .result-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            margin-bottom: 0.15rem;
+        }
+        .result-meta {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+        }
+        .result-url a {
+            color: var(--accent);
+            font-size: 0.82rem;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .result-url a:hover { text-decoration: underline; }
+        .result-paragraphs {
+            margin-top: 0.65rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        .result-paragraphs p { margin: 0.35rem 0; }
+        .ellipsis {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            letter-spacing: 0.2rem;
+        }
+        .no-results {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 1.05rem;
+        }
+
+        .load-sentinel {
+            display: flex;
+            justify-content: center;
+            padding: 1.5rem 0;
+        }
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .load-sentinel.done { display: none; }
+
+        /* Scrollbar for dark */
+        @media (prefers-color-scheme: dark) {
+            ::-webkit-scrollbar { width: 8px; }
+            ::-webkit-scrollbar-track { background: var(--bg); }
+            ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        }
     </style>
 </head>
 <body>
-    <h1>BYU Speeches Search</h1>
-    <form method="get" action="/">
-        <div style="flex:1;">
-            <label for="query">Search Query</label>
-            <input type="text" id="query" name="query" value="{{ query }}" placeholder="Enter search query…" required>
+    <div class="header">
+        <h1>BYU Speeches Search</h1>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+    </div>
+
+    <form method="get" action="/" class="search-card" id="searchForm">
+        <div class="search-row">
+            <div class="field field-query">
+                <label for="query">Search Query</label>
+                <input type="text" id="query" name="query" value="{{ query }}" placeholder="Enter search query…" required>
+            </div>
+            <div class="field speaker-select" id="speakerSelect">
+                <label>Filter by Speaker</label>
+                <div class="speaker-toggle" id="speakerToggle">
+                    <span class="selected-text" id="speakerLabel">All Speakers</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="speaker-dropdown" id="speakerDropdown">
+                    <input type="text" class="speaker-search" id="speakerSearch" placeholder="Search speakers…">
+                    {% for s in speakers %}
+                    <label data-name="{{ s.name | lower }}">
+                        <input type="checkbox" name="speaker" value="{{ s.name }}" {% if s.name in selected_speakers %}checked{% endif %}>
+                        {{ s.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="field" style="justify-content:end;">
+                <button type="submit" class="btn-search">Search</button>
+            </div>
         </div>
-        <div>
-            <label for="speaker">Filter by Speaker</label>
-            <select id="speaker" name="speaker">
-                <option value="">All Speakers</option>
-                {% for s in speakers %}
-                <option value="{{ s.name }}" {% if s.name == selected_speaker %}selected{% endif %}>{{ s.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <button type="submit">Search</button>
-        </div>
+        <div class="speaker-chips" id="speakerChips"></div>
     </form>
 
     {% if query and results %}
-        <h2>Search results for "{{ query }}"</h2>
+        <div class="results-heading" id="resultsHeading">{{ total }} result{{ 's' if total != 1 }} for "{{ query }}"</div>
+        <div id="resultsContainer">
         {% for r in results %}
         <div class="result">
-            <div class="result-title">{{ r.title }} by {{ r.speaker }} ({{ r.date }})<br/>Paragraphs: {{ r.paragraph_indices }}</div>
-            <div class="result-url"><a href="{{ r.url }}" target="_blank">{{ r.url }}</a></div>
+            <div class="result-title">{{ r.title }}</div>
+            <div class="result-meta">{{ r.speaker }} · {{ r.date }} · Paragraph{{ 's' if r.paragraph_indices.split(', ') | length > 1 }} {{ r.paragraph_indices }}</div>
+            <div class="result-url"><a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.url }}</a></div>
             {% if r.paragraphs %}
             <div class="result-paragraphs">
                 {% for para in r.paragraphs %}
@@ -63,8 +399,157 @@
             {% endif %}
         </div>
         {% endfor %}
+        </div>
+        {% if results | length < total %}
+        <div class="load-sentinel" id="loadSentinel" data-offset="{{ results | length }}"><div class="spinner"></div></div>
+        {% endif %}
     {% elif query %}
         <div class="no-results">No results found for "{{ query }}".</div>
     {% endif %}
+
+    <script>
+        // Theme toggle
+        const html = document.documentElement;
+        const toggle = document.getElementById('themeToggle');
+        const stored = localStorage.getItem('theme');
+        if (stored) {
+            html.setAttribute('data-theme', stored);
+            toggle.textContent = stored === 'dark' ? '☀️' : '🌙';
+        }
+        toggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme')
+                || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            toggle.textContent = next === 'dark' ? '☀️' : '🌙';
+        });
+
+        // Multi-select speaker dropdown
+        const speakerToggle = document.getElementById('speakerToggle');
+        const speakerDropdown = document.getElementById('speakerDropdown');
+        const speakerSearch = document.getElementById('speakerSearch');
+        const speakerLabel = document.getElementById('speakerLabel');
+        const speakerChips = document.getElementById('speakerChips');
+        const checkboxes = speakerDropdown.querySelectorAll('input[type="checkbox"]');
+
+        speakerToggle.addEventListener('click', () => {
+            speakerDropdown.classList.toggle('open');
+            speakerToggle.classList.toggle('open');
+            if (speakerDropdown.classList.contains('open')) {
+                speakerSearch.focus();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('speakerSelect').contains(e.target)) {
+                speakerDropdown.classList.remove('open');
+                speakerToggle.classList.remove('open');
+            }
+        });
+
+        speakerSearch.addEventListener('input', () => {
+            const term = speakerSearch.value.toLowerCase();
+            speakerDropdown.querySelectorAll('label[data-name]').forEach(lbl => {
+                lbl.style.display = lbl.dataset.name.includes(term) ? '' : 'none';
+            });
+        });
+
+        function updateSpeakerUI() {
+            const selected = [...checkboxes].filter(c => c.checked).map(c => c.value);
+            speakerLabel.textContent = selected.length === 0
+                ? 'All Speakers'
+                : selected.length === 1
+                    ? selected[0]
+                    : selected.length + ' speakers';
+
+            speakerChips.innerHTML = '';
+            selected.forEach(name => {
+                const chip = document.createElement('span');
+                chip.className = 'chip';
+                chip.textContent = name + ' ';
+                const rm = document.createElement('span');
+                rm.className = 'chip-remove';
+                rm.dataset.speaker = name;
+                rm.innerHTML = '&times;';
+                chip.appendChild(rm);
+                speakerChips.appendChild(chip);
+            });
+        }
+
+        checkboxes.forEach(cb => cb.addEventListener('change', updateSpeakerUI));
+
+        speakerChips.addEventListener('click', (e) => {
+            const rm = e.target.closest('.chip-remove');
+            if (!rm) return;
+            const name = rm.dataset.speaker;
+            checkboxes.forEach(cb => { if (cb.value === name) cb.checked = false; });
+            updateSpeakerUI();
+        });
+
+        updateSpeakerUI();
+
+        // Infinite scroll
+        (function() {
+            const sentinel = document.getElementById('loadSentinel');
+            const container = document.getElementById('resultsContainer');
+            if (!sentinel || !container) return;
+
+            const initialCount = parseInt(sentinel.dataset.offset, 10);
+            const PAGE_SIZE = initialCount;
+            let offset = initialCount;
+            let loading = false;
+
+            function buildResultHTML(r) {
+                const paraIndices = r.paragraph_indices.split(', ');
+                const paraLabel = paraIndices.length > 1 ? 'Paragraphs' : 'Paragraph';
+                let parasHTML = '';
+                if (r.paragraphs && r.paragraphs.length) {
+                    const inner = r.paragraphs.map(p =>
+                        p === '\u2026'
+                            ? '<p class="ellipsis">&hellip;</p>'
+                            : '<p>' + p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>'
+                    ).join('');
+                    parasHTML = '<div class="result-paragraphs">' + inner + '</div>';
+                }
+                return '<div class="result">'
+                    + '<div class="result-title">' + r.title.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+                    + '<div class="result-meta">' + r.speaker.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                        + ' \u00b7 ' + r.date + ' \u00b7 ' + paraLabel + ' ' + r.paragraph_indices + '</div>'
+                    + '<div class="result-url"><a href="' + r.url + '" target="_blank" rel="noopener">' + r.url + '</a></div>'
+                    + parasHTML
+                    + '</div>';
+            }
+
+            async function loadMore() {
+                if (loading) return;
+                loading = true;
+                const params = new URLSearchParams(window.location.search);
+                params.set('offset', offset);
+                params.set('limit', PAGE_SIZE);
+                try {
+                    const resp = await fetch('/api/search?' + params.toString());
+                    const data = await resp.json();
+                    for (const r of data.results) {
+                        container.insertAdjacentHTML('beforeend', buildResultHTML(r));
+                    }
+                    offset += data.results.length;
+                    if (!data.has_more) {
+                        sentinel.classList.add('done');
+                        observer.disconnect();
+                    }
+                } catch (e) {
+                    sentinel.classList.add('done');
+                    observer.disconnect();
+                }
+                loading = false;
+            }
+
+            const observer = new IntersectionObserver(entries => {
+                if (entries[0].isIntersecting) loadMore();
+            }, { rootMargin: '200px' });
+            observer.observe(sentinel);
+        })();
+    </script>
 </body>
 </html>

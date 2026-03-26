@@ -12,17 +12,6 @@ NEXTPLAID_URL = "http://localhost:8080"
 logger = get_logger()
 
 
-def scrape_and_save_speeches():
-    create_tables()
-    speakers = scrape_speakers()
-    if not speakers:
-        logger.error("Failed to scrape any speakers.")
-        return
-
-    for speaker in speakers:
-        populate_speaker(speaker)
-
-
 def main():
     args = argparse.ArgumentParser(description="Scrape, index, and search BYU speeches")
     args.add_argument("--scrape", action="store_true", help="Scrape speeches from the website")
@@ -33,11 +22,19 @@ def main():
     parsed_args = args.parse_args()
 
     if parsed_args.drop:
+        confirm = input("Are you sure you want to drop all database tables? This action cannot be undone. (yes/no): ")
+        if confirm.lower() != "yes" and confirm.lower() != "y":
+            logger.info("Database table drop cancelled.")
+            return
+
         drop_tables()
         with NextPlaidClient(NEXTPLAID_URL) as client:
             delete_speeches_index(client)
+
     elif parsed_args.scrape:
-        scrape_and_save_speeches()
+        create_tables()
+        scrape_speakers(populate_speaker)
+
     elif parsed_args.index:
         speakers = get_speakers_for_indexing()
         with NextPlaidClient(NEXTPLAID_URL) as client:
@@ -45,6 +42,7 @@ def main():
             for speaker in speakers:
                 index_speaker(client, speaker)
                 logger.info(f"Indexed {len(speaker['talks'])} talks for {speaker['name']}")
+
     elif parsed_args.search:
         with NextPlaidClient(NEXTPLAID_URL) as client:
             while True:

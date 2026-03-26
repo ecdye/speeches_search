@@ -7,8 +7,8 @@ from .logging import get_logger
 
 INDEX_NAME = "speeches"
 BATCH_SIZE = 64
-RETRY_DELAY = 15
-MAX_RETRIES = 10
+RETRY_DELAY = 10
+MAX_RETRIES = 5
 logger = get_logger()
 
 

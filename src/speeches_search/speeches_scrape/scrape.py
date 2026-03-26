@@ -1,7 +1,9 @@
+from typing import Callable
+from concurrent.futures import ThreadPoolExecutor
+
+
 import requests
 from bs4 import BeautifulSoup
-from threading import Lock
-from concurrent.futures import ThreadPoolExecutor
 
 from ..resources import Speaker, Speech
 from ..database import get_existing_talk_titles
@@ -11,7 +13,7 @@ from ..logging import get_logger
 logger = get_logger()
 
 
-def scrape_speakers() -> list[Speaker]:
+def scrape_speakers(populate_speaker: Callable[[Speaker], None]) -> None:
     url = "https://speeches.byu.edu/speakers/"
     response = requests.get(url)
 
@@ -24,18 +26,11 @@ def scrape_speakers() -> list[Speaker]:
                 speaker_links.append(str(link_element['href']).rstrip('/').split('/')[-1])
                 logger.info(f"Found speaker link: {link_element['href']}")
 
-    speakers: list[Speaker] = []
-    lock = Lock()
-
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(scrape_speaker, link) for link in speaker_links]
         for future in futures:
-            speaker = future.result()
-            if speaker:
-                with lock:
-                    speakers.append(speaker)
-
-    return speakers
+            if speaker:= future.result():
+                populate_speaker(speaker)
 
 
 def scrape_speaker(speaker_name: str) -> Speaker | None:
@@ -107,7 +102,8 @@ def scrape_speaker_talks(speaker: Speaker, existing_titles: set[str]) -> None:
                 paragraphs = content_element.find_all('p')
                 for p in paragraphs:
                     if "The text for this speech is unavailable." in p.text.strip() or \
-                       p.text.strip() == "The text of this speech is being edited and will be available soon.":
+                       "The text of this speech is unavailable." in p.text.strip() or \
+                       "The text of this speech is being edited and will be available soon." in p.text.strip():
                         logger.warning(f"Text unavailable for talk: {talk['title']} at {talk_url}")
                         paragraphs = []
                         break
