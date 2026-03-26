@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BYU Speeches Search</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { text-align: center; }
+        form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2rem; align-items: end; }
+        form > div { display: flex; flex-direction: column; }
+        label { font-size: 0.85rem; margin-bottom: 0.2rem; }
+        input[type="text"], select { padding: 0.4rem; font-size: 1rem; }
+        input[type="text"] { flex: 1; min-width: 200px; }
+        button { padding: 0.4rem 1rem; font-size: 1rem; cursor: pointer; }
+        .result { border: 1px solid #ccc; border-radius: 4px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; }
+        .result-title { font-weight: bold; }
+        .result-meta { color: #555; font-size: 0.9rem; }
+        .result-url { font-size: 0.85rem; }
+        .result-paragraphs { margin-top: 0.5rem; font-size: 0.9rem; color: #333; }
+        .result-paragraphs p { margin: 0.3rem 0; }
+        .ellipsis { text-align: center; color: #999; font-size: 1.2rem; letter-spacing: 0.2rem; }
+        .no-results { color: #888; text-align: center; margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <h1>BYU Speeches Search</h1>
+    <form method="get" action="/">
+        <div style="flex:1;">
+            <label for="query">Search Query</label>
+            <input type="text" id="query" name="query" value="{{ query }}" placeholder="Enter search query…" required>
+        </div>
+        <div>
+            <label for="speaker">Filter by Speaker</label>
+            <select id="speaker" name="speaker">
+                <option value="">All Speakers</option>
+                {% for s in speakers %}
+                <option value="{{ s.name }}" {% if s.name == selected_speaker %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <button type="submit">Search</button>
+        </div>
+    </form>
+
+    {% if query and results %}
+        <h2>Search results for "{{ query }}"</h2>
+        {% for r in results %}
+        <div class="result">
+            <div class="result-title">{{ r.title }} by {{ r.speaker }} ({{ r.date }})<br/>Paragraphs: {{ r.paragraph_indices }}</div>
+            <div class="result-url"><a href="{{ r.url }}" target="_blank">{{ r.url }}</a></div>
+            {% if r.paragraphs %}
+            <div class="result-paragraphs">
+                {% for para in r.paragraphs %}
+                    {% if para == "\u2026" %}
+                        <p class="ellipsis">&hellip;</p>
+                    {% else %}
+                        <p>{{ para }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% elif query %}
+        <div class="no-results">No results found for "{{ query }}".</div>
+    {% endif %}
+</body>
+</html>

@@ -9,7 +9,7 @@ services:
     environment:
       - HF_HOME=/data/huggingface
       - HF_TOKEN=${HF_TOKEN}
-    command: --host 0.0.0.0 --port 8080 --index-dir /data/indices --model lightonai/answerai-colbert-small-v1-onnx --int8 --parallel 14 --batch-size 2
+    command: --host 0.0.0.0 --port 8080 --index-dir /data/indices --model lightonai/GTE-ModernColBERT-v1 --int8 --parallel 14 --batch-size 2
 
   postgres:
     image: postgres:18

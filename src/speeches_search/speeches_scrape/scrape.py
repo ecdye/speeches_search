@@ -101,7 +101,16 @@ def scrape_speaker_talks(speaker: Speaker, existing_titles: set[str]) -> None:
             soup = BeautifulSoup(response.content, 'html.parser')
             content_element = soup.find('div', class_='single-speech__content')
             if content_element:
+                for sup in content_element.find_all('sup'):  # Remove footnote markers for our text
+                    if sup.string and sup.string.strip().isdigit():
+                        sup.decompose()
                 paragraphs = content_element.find_all('p')
+                for p in paragraphs:
+                    if "The text for this speech is unavailable." in p.text.strip() or \
+                       p.text.strip() == "The text of this speech is being edited and will be available soon.":
+                        logger.warning(f"Text unavailable for talk: {talk['title']} at {talk_url}")
+                        paragraphs = []
+                        break
                 talk['content'] = [p.text.strip() for p in paragraphs]
         else:
             logger.error(f"Failed to retrieve content for talk: {talk['title']} at {talk_url}")

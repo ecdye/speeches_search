@@ -44,6 +44,15 @@ def create_tables():
         logger.info("Database tables created.")
 
 
+def drop_tables():
+    with get_connection() as conn:
+        conn.execute("DROP TABLE IF EXISTS paragraphs CASCADE")
+        conn.execute("DROP TABLE IF EXISTS talks CASCADE")
+        conn.execute("DROP TABLE IF EXISTS speakers CASCADE")
+        conn.commit()
+        logger.info("All database tables dropped.")
+
+
 def populate_from_speakers(speakers: list[Speaker]):
     with get_connection() as conn:
         for speaker in speakers:

@@ -1,12 +1,12 @@
 from next_plaid_client import NextPlaidClient
 import argparse
 
-from .indexer import create_speeches_index, index_speaker
+from .indexer import create_speeches_index, delete_speeches_index, index_speaker
 from .searcher import search_by_speaker, search_speeches
 from .speeches_scrape.scrape import scrape_speakers
-from .database import create_tables, populate_speaker, get_speakers_for_indexing
-from .resources import Speaker
+from .database import create_tables, drop_tables, populate_speaker, get_speakers_for_indexing
 from .logging import get_logger
+from .webapp import run_webapp
 
 NEXTPLAID_URL = "http://localhost:8080"
 logger = get_logger()
@@ -28,9 +28,15 @@ def main():
     args.add_argument("--scrape", action="store_true", help="Scrape speeches from the website")
     args.add_argument("--index", action="store_true", help="Index scraped speeches into NextPlaid")
     args.add_argument("--search", action="store_true", help="Search indexed speeches")
+    args.add_argument("--webapp", action="store_true", help="Start the Flask web frontend")
+    args.add_argument("--drop", action="store_true", help="Drop all database tables for a fresh start")
     parsed_args = args.parse_args()
 
-    if parsed_args.scrape:
+    if parsed_args.drop:
+        drop_tables()
+        with NextPlaidClient(NEXTPLAID_URL) as client:
+            delete_speeches_index(client)
+    elif parsed_args.scrape:
         scrape_and_save_speeches()
     elif parsed_args.index:
         speakers = get_speakers_for_indexing()
@@ -60,6 +66,9 @@ def main():
                                f" by {meta.get('speaker_name', 'Unknown')},"
                                f" Paragraph: {meta.get('paragraph_index', 'Unknown')} [{score:.4f}]")
                         print(f"    URL: {meta.get('speech_url', 'Unknown')}\n")
+
+    elif parsed_args.webapp:
+        run_webapp()
 
     else:
         args.print_help()
