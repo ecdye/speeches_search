@@ -100,6 +100,7 @@ def scrape_speaker_talks(speaker: Speaker, existing_titles: set[str]) -> None:
                     if sup.string and sup.string.strip().isdigit():
                         sup.decompose()
                 paragraphs = content_element.find_all('p')
+                found_all_paragraphs = False
                 for p in paragraphs:
                     if "The text for this speech is unavailable." in p.text.strip() or \
                        "The text of this speech is unavailable." in p.text.strip() or \
@@ -107,6 +108,16 @@ def scrape_speaker_talks(speaker: Speaker, existing_titles: set[str]) -> None:
                         logger.warning(f"Text unavailable for talk: {talk['title']} at {talk_url}")
                         paragraphs = []
                         break
-                talk['content'] = [p.text.strip() for p in paragraphs]
+                    elif "©" in p.text.strip():
+                        p.decompose()
+                    elif "Notes" == p.text.strip():
+                        p.decompose()
+                        found_all_paragraphs = True
+                    elif found_all_paragraphs:
+                        p.decompose()
+                    elif p.text.strip() == "":
+                        p.decompose()
+
+                talk['content'] = [p.text.strip() for p in paragraphs if not p.decomposed and p.text.strip() != ""]
         else:
             logger.error(f"Failed to retrieve content for talk: {talk['title']} at {talk_url}")
