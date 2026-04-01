@@ -5,3 +5,4 @@
 | 3/25 | Improve the CLI query abilities, migrate to postgres, use better model                  | 5     |
 | 3/26 | Fix filtering of missing text talks, improve embedding, cleanup, docs, website upgrades | 5     |
 | 3/30 | Improve scraping, research other ColBERT models for better recognition                  | 5     |
+| 4/1  | Update scraping, lots of testing                                                        | 5     |
