@@ -6,3 +6,4 @@
 | 3/26 | Fix filtering of missing text talks, improve embedding, cleanup, docs, website upgrades | 5     |
 | 3/30 | Improve scraping, research other ColBERT models for better recognition                  | 5     |
 | 4/1  | Update scraping, lots of testing                                                        | 5     |
+| 4/2  | Use sitemap for scraping, reindex, and finalize for presentation                        | 2     |

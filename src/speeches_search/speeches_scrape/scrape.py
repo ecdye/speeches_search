@@ -14,17 +14,28 @@ logger = get_logger()
 
 
 def scrape_speakers(populate_speaker: Callable[[Speaker], None]) -> None:
-    url = "https://speeches.byu.edu/speakers/"
-    response = requests.get(url)
+    url = "https://speeches.byu.edu/speaker-sitemap.xml"
 
+    index = 1
     speaker_links: list[str] = []
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.content, 'html.parser')
-        speaker_elements = soup.find_all('h3', class_='archive-listing__item')
-        for element in speaker_elements:
-            if link_element := element.find('a', class_='archive-item__link'):
-                speaker_links.append(str(link_element['href']).rstrip('/').split('/')[-1])
-                logger.info(f"Found speaker link: {link_element['href']}")
+    while True:
+        if index > 1:
+            url = f"https://speeches.byu.edu/speaker-sitemap{index}.xml"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'lxml')
+            speaker_elements = soup.find_all('url')
+            for element in speaker_elements:
+                if link_element := element.find('loc'):
+                    link = str(link_element.text).strip()
+                    speaker_links.append(link)
+                    logger.info(f"Found speaker link: {link}")
+        else:
+            logger.info(f"No more speaker sitemaps found after index {index}. Stopping.")
+            break
+
+        index += 1
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(scrape_speaker, link) for link in speaker_links]
@@ -33,8 +44,7 @@ def scrape_speakers(populate_speaker: Callable[[Speaker], None]) -> None:
                 populate_speaker(speaker)
 
 
-def scrape_speaker(speaker_name: str) -> Speaker | None:
-    url = f"https://speeches.byu.edu/speakers/{speaker_name}"
+def scrape_speaker(url: str) -> Speaker | None:
     response = requests.get(url)
 
     if response.status_code == 200:
@@ -81,7 +91,7 @@ def scrape_speaker(speaker_name: str) -> Speaker | None:
 
         return speaker
     else:
-        logger.error(f"Failed to retrieve data for {speaker_name}")
+        logger.error(f"Failed to retrieve data for {url}")
         return None
 
 
