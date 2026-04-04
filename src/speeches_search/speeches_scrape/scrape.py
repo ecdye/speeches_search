@@ -38,13 +38,11 @@ def scrape_speakers(populate_speaker: Callable[[Speaker], None]) -> None:
         index += 1
 
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(scrape_speaker, link) for link in speaker_links]
-        for future in futures:
-            if speaker:= future.result():
-                populate_speaker(speaker)
+        for link in speaker_links:
+            executor.submit(scrape_speaker, link, populate_speaker)
 
 
-def scrape_speaker(url: str) -> Speaker | None:
+def scrape_speaker(url: str, populate_speaker: Callable[[Speaker], None]) -> None:
     response = requests.get(url)
 
     if response.status_code == 200:
@@ -89,10 +87,9 @@ def scrape_speaker(url: str) -> Speaker | None:
         scrape_speaker_talks(speaker, existing_titles)
         logger.info(f"Scraped speaker: {speaker['name']} with {len(speaker['talks'])} talks")
 
-        return speaker
+        populate_speaker(speaker)
     else:
         logger.error(f"Failed to retrieve data for {url}")
-        return None
 
 
 def scrape_speaker_talks(speaker: Speaker, existing_titles: set[str]) -> None:
