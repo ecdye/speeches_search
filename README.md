@@ -4,6 +4,10 @@ This is a tool to perform semantic search on the catalog of [BYU Speeches](https
 
 Due to copyright, you must run this on your own machine and download the speeches yourself using the included scraper.
 
+## Demo
+
+![Demo](./docs/demo.gif)
+
 ## Prerequisites
 
 - Python 3.14+
@@ -86,21 +90,4 @@ Drop all database tables and delete the search index:
 
 ```bash
 uv run speeches-search --drop
-```
-
-## Project Structure
-
-```
-src/speeches_search/
-├── __init__.py          # CLI entry point and argument parsing
-├── database.py          # PostgreSQL operations (tables, CRUD)
-├── indexer.py           # NextPlaid index management
-├── searcher.py          # Search query execution
-├── webapp.py            # Flask web application
-├── resources.py         # TypedDict definitions (Speaker, Speech)
-├── logging.py           # Logger configuration
-├── speeches_scrape/
-│   └── scrape.py        # Web scraper for speeches.byu.edu
-└── templates/
-    └── index.html       # Web UI template
 ```
