@@ -71,6 +71,10 @@ I used Claude Opus 4.6 with GitHub Copilot to build most of the implementation â
 
 BYU Speeches has thousands of talks spanning decades, but finding content on a specific topic can be difficult with traditional keyword search. This project provides real value by enabling semantic search â€” you can describe what you're looking for in natural language and get back the most relevant paragraphs, even if they don't contain the exact words you used. It turns a large archive into something genuinely explorable.
 
+## Sharing
+
+You are welcome to use this project as an example for future semesters.
+
 ## Prerequisites
 
 - Python 3.14+
